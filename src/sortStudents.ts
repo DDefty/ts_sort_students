@@ -26,29 +26,46 @@ export function sortStudents(
   sortBy: SortType,
   order: SortOrder,
 ): Student[] {
-  return [...students].sort((a, b) => {
-    const getValue = (s: Student): string | number => {
-      switch (sortBy) {
-        case SortType.Name: return s.name;
-        case SortType.Surname: return s.surname;
-        case SortType.Age: return s.age;
-        case SortType.Married: return s.married ? 1 : 0;
-        case SortType.AverageGrade: return getAverage(s.grades);
-        default: return '';
+  const sortedStudents = [...students];
+  const studentsWithIndex = sortedStudents.map((student, index) => ({
+    student,
+    originalIndex: index,
+  }));
+
+  studentsWithIndex.sort((a, b) => {
+    let comparison = 0;
+
+    switch (sortBy) {
+      case SortType.Name:
+        comparison = a.student.name.localeCompare(b.student.name);
+        break;
+      case SortType.Surname:
+        comparison = a.student.surname.localeCompare(b.student.surname);
+        break;
+      case SortType.Age:
+        comparison = a.student.age - b.student.age;
+        break;
+      case SortType.Married:
+        comparison = Number(a.student.married) - Number(b.student.married);
+        break;
+
+      case SortType.AverageGrade: {
+        const avgA = getAverage(a.student.grades);
+        const avgB = getAverage(b.student.grades);
+
+        comparison = avgA - avgB;
+        break;
       }
-    };
-
-    const valA = getValue(a);
-    const valB = getValue(b);
-
-    if (typeof valA === 'string' && typeof valB === 'string') {
-      return order === 'asc'
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
+      default:
+        comparison = 0;
     }
 
-    return order === 'asc'
-      ? (valA as number) - (valB as number)
-      : (valB as number) - (valA as number);
+    if (comparison === 0) {
+      return a.originalIndex - b.originalIndex;
+    }
+
+    return order === 'asc' ? comparison : -comparison;
   });
+
+  return studentsWithIndex.map((item) => item.student);
 }
